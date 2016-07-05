@@ -61,61 +61,72 @@ import urllib
 import requests
 
 
-page_to_scrape = sys.argv[1]
+def main():
+    page_to_scrape = sys.argv[1]
 
-response = requests.get(page_to_scrape)
+    response = requests.get(page_to_scrape)
 
-files = []
-pdf_search = re.compile(r'<a href=[\'"]'
-                        r'([/\w -]*\.pdf)[\'"]')
+    files = []
+    pdf_search = re.compile(r'<a href=[\'"]'
+                            r'([/\w% -]*\.pdf)[\'"]')
 
-for line in response.iter_lines():
-    matches = re.finditer(pdf_search, line)
-    for match in matches:
-        #print urllib.quote(match.group(1))
-        files.append(match.group(1))
+    for line in response.iter_lines():
+        matches = re.finditer(pdf_search, line)
+        for match in matches:
+            download_url = match.group(1)
+            if not download_url.startswith("http"):
+                # Relative URL-cat onto page URL.
+                download_url = os.path.join(os.path.dirname(page_to_scrape),
+                                            download_url)
+            files.append(download_url)
+            print "Adding '{} to download list.".format(download_url)
 
-if page_to_scrape.upper().endswith((".PHP", ".HTML", ".HTML")):
-    base_url = page_to_scrape.rsplit("/", 1)[0]
-else:
-    base_url = page_to_scrape
+    if page_to_scrape.upper().endswith((".PHP", ".HTML", ".HTML")):
+        base_url = page_to_scrape.rsplit("/", 1)[0]
+    else:
+        base_url = page_to_scrape
 
-failures = []
-try:
-    for filename in files:
-        download_url = os.path.join(base_url, urllib.quote(filename))
-        output_file = filename.replace("/", "-").replace(" ", "")
-        print download_url, output_file
-        try:
-            size = int(requests.head(download_url).headers["content-length"])
-        except KeyError:
-            # Something went wrong, add to the failures list and move on.
-            print "Failed to download %s" % download_url
-            failures.append(download_url)
-            continue
+    failures = []
+    try:
+        for filename in files:
+            # download_url = os.path.join(base_url, urllib.quote(filename))
+            output_file = os.path.basename(filename).replace("/", "-")
+            try:
+                size = int(
+                    requests.head(download_url).headers["content-length"])
+            except KeyError:
+                # Something went wrong, add to the failures list and move on.
+                print "Failed to download %s" % download_url
+                failures.append(download_url)
+                continue
 
-        if os.path.exists(output_file) and size > os.stat(output_file).st_size:
-            print ("File %s incomplete, downloading again from scratch." %
-                output_file)
-        elif not os.path.exists(output_file):
-            print "Downloading %s" % download_url
-        else:
-            print "Already downloaded."
-            continue
+            if (os.path.exists(output_file) and
+                    size > os.stat(output_file).st_size):
+                print ("File %s incomplete, downloading again from scratch." %
+                    output_file)
+            elif not os.path.exists(output_file):
+                print "Downloading %s" % download_url
+            else:
+                print "Already downloaded."
+                continue
 
-        print "Downloading {:,} bytes".format(size)
+            print "Downloading {:,} bytes".format(size)
 
-        with open(output_file, 'wb') as f:
-            response = requests.get(download_url, stream=True)
-            for segment in response.iter_content():
-                f.write(segment)
-except KeyboardInterrupt:
-    print "User quit!"
-except Exception as e:
-    print e, type(e)
+            with open(output_file, 'wb') as f:
+                response = requests.get(download_url, stream=True)
+                for segment in response.iter_content():
+                    f.write(segment)
+    except KeyboardInterrupt:
+        print "User quit!"
+    except Exception as e:
+        print e, type(e)
 
-finally:
-    if failures:
-        print "Failed to download the following:"
-        for failure in failures:
-            print failure
+    finally:
+        if failures:
+            print "Failed to download the following:"
+            for failure in failures:
+                print failure
+
+
+if __name__ == "__main__":
+    main()
