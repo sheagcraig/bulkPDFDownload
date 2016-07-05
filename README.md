@@ -25,8 +25,14 @@
 (______/ (_______)(_______)|/    )_)(_______/(_______)|/     \|(______/
 ```
 
-One day I decided that I really wanted to download a ton of PDF's for old things I used like. And I discovered that there were sources for these things. So I wrote a quick script to hog them down so I wouldn't have to use some janky browser plugin or do lots of clicking.
+One day I decided that I really wanted to download a ton of PDF's for old
+things I used to like. And I discovered that there were sources for these
+things. So I wrote a quick script to hog them down so I wouldn't have to use
+some janky browser plugin or do lots of clicking.
 
-At the moment, this takes a single argument-a web page to scrape for PDF links. It does some manipulation of the filename to avoid spaces and reserved characters.
+At the moment, this takes a single argument-a web page to scrape for PDF links.
+It does some manipulation of the filename to avoid spaces and reserved
+characters.
 
-There is certainly lots of room for improvement, which may occur if I need to use it again and it doesn't meet my needs!
+There is certainly lots of room for improvement, which may occur if I need to
+use it again and it doesn't meet my needs!

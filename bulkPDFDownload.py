@@ -53,6 +53,7 @@ nostalgia-gasm.
 Lots of room for improvement ;)
 """
 
+import argparse
 import os
 import re
 import sys
@@ -62,7 +63,12 @@ import requests
 
 
 def main():
-    page_to_scrape = sys.argv[1]
+    parser = argparse.ArgumentParser()
+    parser.add_argument("scrape_url")
+    parser.add_argument("-o", "--output_dir", help="Directory to save output "
+                        "in.")
+    args = parser.parse_args()
+    page_to_scrape = args.scrape_url
 
     response = requests.get(page_to_scrape)
 
@@ -86,11 +92,13 @@ def main():
     else:
         base_url = page_to_scrape
 
+    output_dir = os.path.expanduser(args.output_dir) or ""
     failures = []
     try:
-        for filename in files:
-            # download_url = os.path.join(base_url, urllib.quote(filename))
-            output_file = os.path.basename(filename).replace("/", "-")
+        for download_url in files:
+            output_file = urllib.unquote(
+                os.path.basename(download_url).replace("/", "-"))
+            output_path = os.path.join(output_dir, output_file)
             try:
                 size = int(
                     requests.head(download_url).headers["content-length"])
@@ -100,19 +108,19 @@ def main():
                 failures.append(download_url)
                 continue
 
-            if (os.path.exists(output_file) and
-                    size > os.stat(output_file).st_size):
-                print ("File %s incomplete, downloading again from scratch." %
-                    output_file)
-            elif not os.path.exists(output_file):
-                print "Downloading %s" % download_url
+            if (os.path.exists(output_path) and
+                    size != os.stat(output_path).st_size):
+                print ("File '%s' incomplete, downloading again from scratch."
+                       % output_path)
+            elif not os.path.exists(output_path):
+                print "Downloading '%s'" % download_url
             else:
-                print "Already downloaded."
+                print "Already downloaded '{}'.".format(download_url)
                 continue
 
             print "Downloading {:,} bytes".format(size)
 
-            with open(output_file, 'wb') as f:
+            with open(output_path, 'wb') as f:
                 response = requests.get(download_url, stream=True)
                 for segment in response.iter_content():
                     f.write(segment)
