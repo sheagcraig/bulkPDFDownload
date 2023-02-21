@@ -73,9 +73,10 @@ def main():
     response = requests.get(page_to_scrape)
 
     files = []
-    pdf_search = re.compile(r'<a href=[\'"]'
-                            r'([/\w% -]*\.pdf)[\'"]')
+    pdf_search = re.compile(r'href=[\'"]'
+                            r'([-/\w% ]*\.pdf)[\'"]')
 
+    import pdb;pdb.set_trace()
     for line in response.iter_lines():
         matches = re.finditer(pdf_search, line)
         for match in matches:
@@ -103,12 +104,11 @@ def main():
                 size = int(
                     requests.head(download_url).headers["content-length"])
             except KeyError:
-                # Something went wrong, add to the failures list and move on.
-                print "Failed to download %s" % download_url
-                failures.append(download_url)
-                continue
+                print ("Server doesn't support content-length header. "
+                       "Downloading all missing files from scratch.")
+                size = 0
 
-            if (os.path.exists(output_path) and
+            if (os.path.exists(output_path) and size and
                     size != os.stat(output_path).st_size):
                 print ("File '%s' incomplete, downloading again from scratch."
                        % output_path)
